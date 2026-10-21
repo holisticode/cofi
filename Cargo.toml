@@ -1,0 +1,3 @@
+[workspace]
+members = ["cofi-contracts", "cofi-block", "cofi-node", "cofi-client"]
+resolver = "3"

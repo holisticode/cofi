@@ -1,0 +1,17 @@
+[package]
+name = "cofi-block"
+version = "0.1.0"
+edition = "2024"
+description = "CoFi block data structures — header, body, hash chain primitives"
+
+[dependencies]
+cofi-contracts = { path = "../cofi-contracts" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+
+
+[dev-dependencies]
+tempfile = "3"
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+rand = "0.8"

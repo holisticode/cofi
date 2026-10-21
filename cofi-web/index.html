@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="description" content="CoFi — Proof of Contribution. A blockchain where peer-reviewed contributions become governance power. No coins staked, no mining."/>
+<title>CoFi — Proof of Contribution</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg:#0b0f1a; --panel:#12192b; --panel2:#141b2e; --border:#1d2539; --border2:#2c3757;
+    --text:#e6edf7; --soft:#c9d6ea; --muted:#8b96ad; --faint:#5b6b8c;
+    --accent:#5eead4;
+    --design:#f77f00; --code:#4cc9f0; --community:#f72585;
+    --support:#80ed99; --funding:#ffd166; --infra:#5eead4;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    background: radial-gradient(1200px 620px at 50% -120px, #152038 0%, var(--bg) 58%);
+    color:var(--text);
+    font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height:1.6;
+  }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+
+  /* Nav ------------------------------------------------------------------ */
+  nav {
+    position:sticky; top:0; z-index:10;
+    display:flex; align-items:center; gap:28px;
+    padding:14px 32px;
+    background:rgba(11,15,26,.82); backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--border);
+  }
+  nav .logo { font-size:20px; font-weight:800; color:var(--text); letter-spacing:.5px; }
+  nav .logo:hover { text-decoration:none; }
+  nav .links { display:flex; gap:22px; font-size:14.5px; margin-left:auto; flex-wrap:wrap; }
+  nav .links a { color:var(--muted); }
+  nav .links a:hover { color:var(--accent); text-decoration:none; }
+
+  /* Layout ---------------------------------------------------------------- */
+  main { max-width:1100px; margin:0 auto; padding:0 32px; }
+  section { padding:84px 0 8px; }
+  .kicker {
+    font-size:12px; letter-spacing:2.5px; text-transform:uppercase;
+    color:var(--faint); margin-bottom:14px;
+  }
+  h2 { font-size:32px; font-weight:800; margin-bottom:14px; letter-spacing:.2px; }
+  .lead { color:var(--soft); font-size:17.5px; max-width:720px; }
+  .grid { display:grid; gap:18px; margin-top:36px; }
+  .grid.c3 { grid-template-columns:repeat(3, 1fr); }
+  .grid.c2 { grid-template-columns:repeat(2, 1fr); }
+  .card {
+    background:var(--panel); border:1px solid var(--border); border-radius:14px;
+    padding:24px 26px;
+  }
+  .card h3 { font-size:17.5px; margin-bottom:8px; }
+  .card p { color:var(--soft); font-size:15px; }
+  .card .glyph { font-size:22px; display:block; margin-bottom:10px; }
+  .card .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:8px; }
+
+  /* Hero ------------------------------------------------------------------ */
+  #hero { padding-top:96px; display:grid; grid-template-columns:1.15fr .85fr; gap:40px; align-items:center; }
+  #hero h1 { font-size:64px; font-weight:800; letter-spacing:1px; }
+  #hero .subtitle { font-size:23px; font-weight:600; color:var(--accent); margin:10px 0 22px; }
+  #hero .hook { color:var(--soft); font-size:18px; max-width:520px; }
+  #hero .cta { display:flex; gap:16px; margin-top:32px; flex-wrap:wrap; }
+  .btn {
+    display:inline-block; padding:11px 26px; border-radius:9px; font-size:15px;
+    border:1px solid var(--border2); color:var(--soft); background:var(--panel2);
+  }
+  .btn:hover { border-color:var(--accent); color:var(--accent); text-decoration:none; }
+  .btn.primary { background:var(--accent); color:#0b0f1a; border-color:var(--accent); font-weight:700; }
+  .btn.primary:hover { background:#7ff5e0; }
+  #pool {
+    background:var(--panel); border:1px solid var(--border); border-radius:18px;
+    padding:18px 26px 22px; max-width:420px; justify-self:end;
+  }
+  #pool svg { width:100%; height:auto; display:block; }
+  #pool .legend { display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:14px; justify-content:center; }
+  #pool .legend span { font-size:13px; color:var(--soft); }
+
+  /* Flow ------------------------------------------------------------------ */
+  .flow { display:flex; align-items:stretch; gap:10px; margin:40px 0 6px; flex-wrap:wrap; }
+  .flow .step {
+    flex:1 1 150px; background:var(--panel); border:1px solid var(--border);
+    border-radius:14px; padding:18px 16px; position:relative;
+  }
+  .flow .step .n { color:var(--accent); font-weight:800; font-size:14px; letter-spacing:1px; }
+  .flow .step h4 { font-size:16px; margin:4px 0 6px; }
+  .flow .step p { font-size:13.5px; color:var(--muted); }
+  .flow .arrow { align-self:center; color:var(--faint); font-size:20px; }
+
+  /* Steps ------------------------------------------------------------------ */
+  .steps { margin-top:36px; display:grid; gap:16px; }
+  .stepcard {
+    display:grid; grid-template-columns:56px 1fr; gap:18px;
+    background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:22px 26px;
+  }
+  .stepcard .num {
+    width:44px; height:44px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    border:1px solid var(--border2); color:var(--accent); font-weight:800; font-size:18px;
+  }
+  .stepcard h3 { font-size:18px; margin-bottom:6px; }
+  .stepcard p { color:var(--soft); font-size:15px; }
+  .stepcard .formula {
+    display:inline-block; margin-top:10px; padding:6px 12px; border-radius:8px;
+    background:var(--panel2); border:1px solid var(--border2);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size:13.5px; color:var(--soft);
+  }
+  .note { color:var(--faint); font-size:13.5px; margin-top:8px; }
+
+  /* Dimensions ------------------------------------------------------------- */
+  .dim { margin-top:36px; }
+  .dim h3.section { font-size:15px; letter-spacing:1.5px; text-transform:uppercase; color:var(--faint); margin:28px 0 14px; }
+  .pill {
+    display:flex; gap:14px; align-items:flex-start;
+    background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:18px 22px;
+  }
+  .pill + .pill { margin-top:12px; }
+  .pill .icon { font-size:20px; width:26px; text-align:center; }
+  .pill h4 { font-size:16px; margin-bottom:3px; }
+  .pill p { color:var(--soft); font-size:14.5px; }
+  .pill.off { background:transparent; border-color:var(--border); }
+  .pill.off h4 { color:var(--muted); }
+  .pill.off p { color:var(--faint); }
+
+  /* Tech ------------------------------------------------------------------- */
+  .tech { grid-template-columns:repeat(3, 1fr); }
+  .tech .card .glyph { color:var(--accent); }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size:.92em; color:var(--accent); }
+
+  /* FAQ -------------------------------------------------------------------- */
+  details {
+    background:var(--panel); border:1px solid var(--border); border-radius:12px;
+    padding:16px 22px; margin-top:12px;
+  }
+  details summary { cursor:pointer; font-weight:700; font-size:16px; color:var(--text); }
+  details summary::marker { color:var(--accent); }
+  details p { color:var(--soft); font-size:15px; margin-top:8px; }
+
+  /* Status ----------------------------------------------------------------- */
+  .status-grid { grid-template-columns:repeat(3, 1fr); }
+  .status-grid h3 { font-size:16px; }
+  .status-grid ul { list-style:none; margin-top:8px; }
+  .status-grid li { color:var(--soft); font-size:14.5px; padding:4px 0 4px 20px; position:relative; }
+  .status-grid li::before { content:"–"; position:absolute; left:2px; color:var(--accent); }
+  .disclaimer {
+    margin-top:28px; padding:14px 20px; border-radius:12px; font-size:14px;
+    background:var(--panel2); border:1px dashed var(--border2); color:var(--muted);
+  }
+
+  footer {
+    margin-top:90px; padding:30px 32px 40px; text-align:center;
+    border-top:1px solid var(--border); color:var(--faint); font-size:14px;
+  }
+  footer .tag { color:var(--soft); font-size:15px; margin-bottom:6px; }
+
+  /* Reveal ------------------------------------------------------------------ */
+  .reveal { opacity:0; transform:translateY(16px); transition:opacity .6s ease, transform .6s ease; transition-delay:var(--d, 0s); }
+  .reveal.visible { opacity:1; transform:none; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior:auto; }
+    .reveal { opacity:1; transform:none; transition:none; }
+  }
+
+  @media (max-width: 860px) {
+    #hero { grid-template-columns:1fr; padding-top:56px; }
+    #pool { justify-self:start; max-width:100%; }
+    .grid.c3, .grid.c2, .tech, .status-grid { grid-template-columns:1fr; }
+    nav { padding:12px 18px; }
+    nav .links { gap:14px; }
+    main { padding:0 20px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="#hero">CoFi</a>
+  <div class="links">
+    <a href="#overview">Overview</a>
+    <a href="#how">How it works</a>
+    <a href="#infrastructure">Infrastructure</a>
+    <a href="#tech">Tech</a>
+    <a href="#faq">FAQ</a>
+    <a href="./demo.html">Demo →</a>
+  </div>
+</nav>
+
+<main>
+
+<!-- ================= Hero ================= -->
+<section id="hero">
+  <div class="reveal">
+    <h1>CoFi</h1>
+    <div class="subtitle">Proof of Contribution — community wealth, cooperatively managed</div>
+    <p class="hook">
+      Contributions — code, design, community, infrastructure — are peer-reviewed and become
+      voting power. No coins staked. No mining. Work becomes power.
+    </p>
+    <div class="cta">
+      <a class="btn primary" href="#how">How it works</a>
+      <a class="btn" href="./demo.html">Watch the demo</a>
+    </div>
+  </div>
+  <div id="pool" class="reveal" style="--d:.15s">
+    <svg id="poolsvg" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="legend" id="poollegend"></div>
+  </div>
+</section>
+
+<!-- ================= Overview ================= -->
+<section id="overview">
+  <div class="kicker reveal">Overview</div>
+  <h2 class="reveal">The idea in three points</h2>
+  <p class="lead reveal">
+    Most blockchains give power to those who already hold coins. CoFi gives power to those
+    who build the community — and proves it.
+  </p>
+  <div class="grid c3">
+    <div class="card reveal" style="--d:.05s">
+      <span class="glyph">◔</span>
+      <h3>One shared pool</h3>
+      <p>
+        Every contribution, whatever its type, lands in a single pool of contribution units.
+        Your share of the pool is your share of governance — one measure, no privileged asset class.
+      </p>
+    </div>
+    <div class="card reveal" style="--d:.15s">
+      <span class="glyph">⚒</span>
+      <h3>Work becomes power</h3>
+      <p>
+        Units are minted by reviewed work, not bought with coins. Validator voting power equals
+        contribution units — the people who built the community decide its future.
+      </p>
+    </div>
+    <div class="card reveal" style="--d:.25s">
+      <span class="glyph">∅</span>
+      <h3>No stake, no mining</h3>
+      <p>
+        There is no proof-of-stake and no proof-of-work. Consensus is run by contributors, and
+        the chain rewards its operators per block for keeping it alive.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= How it works ================= -->
+<section id="how">
+  <div class="kicker reveal">How it works</div>
+  <h2 class="reveal">From work to power, in five steps</h2>
+
+  <div class="flow reveal">
+    <div class="step"><span class="n">01</span><h4>Contribute</h4><p>Record real work</p></div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="n">02</span><h4>Review</h4><p>Peers verify it</p></div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="n">03</span><h4>Mint</h4><p>Units enter the pool</p></div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="n">04</span><h4>Claim</h4><p>Your share, firmly yours</p></div>
+    <div class="arrow">→</div>
+    <div class="step"><span class="n">05</span><h4>Redeem</h4><p>Exit with what you earned</p></div>
+  </div>
+
+  <div class="steps">
+    <div class="stepcard reveal">
+      <div class="num">1</div>
+      <div>
+        <h3>Contribute</h3>
+        <p>
+          Record any real work: code, design, community, support, funding, infrastructure.
+          Each asset type carries a weight that reflects its value to the community, and the
+          contribution is normalized into internal value units: amount × weight.
+        </p>
+      </div>
+    </div>
+    <div class="stepcard reveal">
+      <div class="num">2</div>
+      <div>
+        <h3>Review</h3>
+        <p>
+          Contributions enter a commit-reveal review. Reviewers — contributors with skin in the
+          game — first commit to a vote, then reveal it, so nobody can copy anybody else. A
+          proportional quorum (default ⅔) approves, and nobody can approve their own work.
+        </p>
+        <div class="note">Until the first reviewers exist, bootstrap approval starts the pool.</div>
+      </div>
+    </div>
+    <div class="stepcard reveal">
+      <div class="num">3</div>
+      <div>
+        <h3>Mint</h3>
+        <p>
+          Approved work mints contribution units with a pro-rata formula: the pool's current
+          size prices each unit of work. Early work mints more units per unit of work — showing
+          up early is rewarded automatically and verifiably.
+        </p>
+        <span class="formula">units = asset_units × total_contrib ÷ total_asset</span>
+      </div>
+    </div>
+    <div class="stepcard reveal">
+      <div class="num">4</div>
+      <div>
+        <h3>Hold your claim</h3>
+        <p>
+          The pool grows only by minting units to new reviewed work. Your units are never
+          debited and never diluted: at any moment, your claim is exactly what you earned.
+          Community wealth grows; your title to it stays firm.
+        </p>
+      </div>
+    </div>
+    <div class="stepcard reveal">
+      <div class="num">5</div>
+      <div>
+        <h3>Redeem</h3>
+        <p>
+          Leaving is a signed message, not a negotiation. Redeem part or all of your units and
+          exit with what you've earned — the door opens both ways.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= Dimensions ================= -->
+<section id="dimensions">
+  <div class="kicker reveal">The dimensions</div>
+  <h2 class="reveal">What counts — and what doesn't</h2>
+  <p class="lead reveal">
+    Power in CoFi is measured, never self-reported. What can be proven counts; what can only
+    be claimed does not.
+  </p>
+
+  <div class="dim reveal">
+    <h3 class="section">Counts</h3>
+    <div class="pill">
+      <span class="icon">✎</span>
+      <div>
+        <h4>Work</h4>
+        <p>
+          Any weighted asset type, from code to community management. Funding is an asset type
+          like the others — capital gets no special path.
+        </p>
+      </div>
+    </div>
+    <div class="pill">
+      <span class="icon">⊞</span>
+      <div>
+        <h4>Presence</h4>
+        <p>
+          Running a node and signing blocks is itself a contribution, credited from
+          cryptographic proof of each signature — verified presence, not a promise.
+        </p>
+      </div>
+    </div>
+    <div class="pill">
+      <span class="icon">◐</span>
+      <div>
+        <h4>Early commitment</h4>
+        <p>
+          The pro-rata formula prices work against the pool's current size: the same
+          contribution mints fewer units as the community grows.
+        </p>
+      </div>
+    </div>
+
+    <h3 class="section">Doesn't count</h3>
+    <div class="pill off">
+      <span class="icon">✕</span>
+      <div>
+        <h4>Staked coins</h4>
+        <p>There is nothing to stake. Holding wealth buys no power.</p>
+      </div>
+    </div>
+    <div class="pill off">
+      <span class="icon">✕</span>
+      <div>
+        <h4>Claimed seniority</h4>
+        <p>"I've been here forever" isn't provable — only reviewed work and signed blocks are.</p>
+      </div>
+    </div>
+    <div class="pill off">
+      <span class="icon">✕</span>
+      <div>
+        <h4>Self-reported uptime</h4>
+        <p>Rewards flow from verified signatures, never from what a node says about itself.</p>
+      </div>
+    </div>
+    <p class="note reveal">
+      Reputation scores and richer identity are natural future directions — but only as far as
+      they stay verifiable. CoFi measures what can be proven.
+    </p>
+  </div>
+</section>
+
+<!-- ================= Infrastructure ================= -->
+<section id="infrastructure">
+  <div class="kicker reveal">The infrastructure layer</div>
+  <h2 class="reveal">Nodes are first-class contributors</h2>
+  <p class="lead reveal">
+    A blockchain only exists because somebody runs it. In CoFi, running it is a contribution
+    like any other — and the chain pays for its own upkeep.
+  </p>
+  <div class="grid c3">
+    <div class="card reveal" style="--d:.05s">
+      <span class="glyph">▣</span>
+      <h3>Signing is work</h3>
+      <p>
+        Each block a validator signs is registered work of type <em>infrastructure</em>, credited
+        from cryptographic evidence: the validator's signature in the consensus commit. Nobody
+        asks — the chain knows.
+      </p>
+    </div>
+    <div class="card reveal" style="--d:.15s">
+      <span class="glyph">⇄</span>
+      <h3>Power = contribution units</h3>
+      <p>
+        The consensus layer never sees coins. The app tells CometBFT one thing: each registered
+        validator's voting power is its contribution units. No separate stake, no delegation.
+      </p>
+    </div>
+    <div class="card reveal" style="--d:.25s">
+      <span class="glyph">⚿</span>
+      <h3>Skin in the game</h3>
+      <p>
+        A key can only be registered after its contributor has earned units. You must have
+        contributed before you can validate — and keep signing to keep earning.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= Tech ================= -->
+<section id="tech">
+  <div class="kicker reveal">Technical details</div>
+  <h2 class="reveal">Under the hood</h2>
+  <div class="grid tech">
+    <div class="card reveal" style="--d:.05s">
+      <span class="glyph">✍</span>
+      <h3>Ed25519</h3>
+      <p>Signatures authenticate reviews, redemptions, and validator key registration.</p>
+    </div>
+    <div class="card reveal" style="--d:.1s">
+      <span class="glyph">#</span>
+      <h3>SHA-256</h3>
+      <p>Commitments for blind votes; validator addresses derived from public keys.</p>
+    </div>
+    <div class="card reveal" style="--d:.15s">
+      <span class="glyph">▲</span>
+      <h3>Merkle root</h3>
+      <p>The full state is hashed into a Merkle root every block — the app hash.</p>
+    </div>
+    <div class="card reveal" style="--d:.2s">
+      <span class="glyph">◉</span>
+      <h3>Commit-reveal</h3>
+      <p>Votes are committed before they're revealed, so reviewers can't copy each other.</p>
+    </div>
+    <div class="card reveal" style="--d:.25s">
+      <span class="glyph">⇌</span>
+      <h3>CometBFT + ABCI 2.0</h3>
+      <p>BFT consensus, P2P networking and mempool; the CoFi app is a Rust ABCI application.</p>
+    </div>
+    <div class="card reveal" style="--d:.3s">
+      <span class="glyph">ƒ</span>
+      <h3>Pro-rata minting</h3>
+      <p><code>units = asset_units × total_contrib ÷ total_asset</code> — the formula that prices work against the pool.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section id="faq">
+  <div class="kicker reveal">FAQ</div>
+  <h2 class="reveal">Questions people ask</h2>
+
+  <details class="reveal">
+    <summary>Is CoFi a proof-of-stake chain?</summary>
+    <p>No. There are no coins to stake and no slashing. Governance power comes from reviewed
+    contributions, and validator power is contribution units — not a deposit.</p>
+  </details>
+  <details class="reveal">
+    <summary>Can I buy voting power?</summary>
+    <p>There is no shortcut. Funding is an asset type like code or design: it goes through the
+    same review, into the same pool, with no special path.</p>
+  </details>
+  <details class="reveal">
+    <summary>What happens to my units when the pool grows?</summary>
+    <p>Nothing. Pool growth mints units to new reviewed work; it never debits you. Your absolute
+    claim stays firm, and you can redeem it at any time.</p>
+  </details>
+  <details class="reveal">
+    <summary>What if I stop contributing?</summary>
+    <p>Your units remain yours and redeemable. Infrastructure rewards simply stop accruing when
+    your node stops signing — presence is measured per block.</p>
+  </details>
+  <details class="reveal">
+    <summary>Who can review?</summary>
+    <p>Contributors who have earned units and registered a key — skin in the game. The default
+    quorum is two-thirds, and approving your own work is blocked.</p>
+  </details>
+  <details class="reveal">
+    <summary>Can I leave?</summary>
+    <p>Yes. Sign a redemption message for part or all of your units and exit — the door opens
+    both ways.</p>
+  </details>
+</section>
+
+<!-- ================= Status ================= -->
+<section id="status">
+  <div class="kicker reveal">Where CoFi stands</div>
+  <h2 class="reveal">Status</h2>
+  <div class="grid status-grid">
+    <div class="card reveal" style="--d:.05s">
+      <h3>Working today</h3>
+      <ul>
+        <li>Full protocol loop verified end-to-end on a live devnet</li>
+        <li>Contribute → review → approve → validate → redeem</li>
+        <li>CLI client, keygen to redemption</li>
+      </ul>
+    </div>
+    <div class="card reveal" style="--d:.15s">
+      <h3>Open work</h3>
+      <ul>
+        <li>Multi-validator devnet</li>
+        <li>Liveness when a dominant validator goes offline</li>
+        <li>SDK growth and key-management polish</li>
+      </ul>
+    </div>
+    <div class="card reveal" style="--d:.25s">
+      <h3>To be clear</h3>
+      <ul>
+        <li>CoFi is a learning project</li>
+        <li>Not production-ready</li>
+        <li>No mainnet</li>
+      </ul>
+    </div>
+  </div>
+  <p class="disclaimer reveal">
+    CoFi is a learning project — an exploration of contribution-weighted governance. It is not
+    production-ready and has no mainnet.
+  </p>
+</section>
+
+</main>
+
+<footer>
+  <div class="tag">CoFi — work becomes power</div>
+  <a href="./demo.html">Watch the demo</a>
+</footer>
+
+<script>
+"use strict";
+
+// Pool donut in the hero: one slice per asset type, sized by its weight.
+const NS = "http://www.w3.org/2000/svg";
+const SEGS = [
+  ["design",         3.0, "#f77f00"],
+  ["code",           1.3, "#4cc9f0"],
+  ["community",      1.0, "#f72585"],
+  ["support",        1.0, "#80ed99"],
+  ["funding",        1.0, "#ffd166"],
+  ["infrastructure", 1.0, "#5eead4"],
+];
+const CX = 160, CY = 160, R1 = 118, R0 = 66;
+
+function polar(r, ang) { return [CX + r * Math.cos(ang), CY + r * Math.sin(ang)]; }
+function arcPath(a0, a1) {
+  const large = (a1 - a0) > Math.PI ? 1 : 0;
+  const [x0, y0] = polar(R1, a0);
+  const [x1, y1] = polar(R1, a1);
+  const [x2, y2] = polar(R0, a1);
+  const [x3, y3] = polar(R0, a0);
+  return `M${x0},${y0} A${R1},${R1} 0 ${large} 1 ${x1},${y1} L${x2},${y2} A${R0},${R0} 0 ${large} 0 ${x3},${y3} Z`;
+}
+
+const svg = document.getElementById("poolsvg");
+const total = SEGS.reduce((s, [, w]) => s + w, 0);
+let a0 = -Math.PI / 2;
+const slices = [];
+for (const [name, w, color] of SEGS) {
+  const a1 = a0 + (w / total) * Math.PI * 2;
+  const p = document.createElementNS(NS, "path");
+  p.setAttribute("d", arcPath(a0, a1));
+  p.setAttribute("fill", color);
+  p.setAttribute("stroke", "#0b0f1a");
+  p.setAttribute("stroke-width", "2");
+  svg.appendChild(p);
+  slices.push(p);
+  a0 = a1;
+}
+const centerText = document.createElementNS(NS, "text");
+centerText.setAttribute("x", CX);
+centerText.setAttribute("y", CY - 2);
+centerText.setAttribute("text-anchor", "middle");
+centerText.setAttribute("fill", "#e6edf7");
+centerText.setAttribute("font-size", "22");
+centerText.setAttribute("font-weight", "800");
+centerText.textContent = "the pool";
+svg.appendChild(centerText);
+const subText = document.createElementNS(NS, "text");
+subText.setAttribute("x", CX);
+subText.setAttribute("y", CY + 24);
+subText.setAttribute("text-anchor", "middle");
+subText.setAttribute("fill", "#8b96ad");
+subText.setAttribute("font-size", "12");
+subText.textContent = "one shared pool of units";
+svg.appendChild(subText);
+
+const legend = document.getElementById("poollegend");
+for (const [name, w, color] of SEGS) {
+  const s = document.createElement("span");
+  const d = document.createElement("i");
+  d.className = "dot";
+  d.style.background = color;
+  s.appendChild(d);
+  s.appendChild(document.createTextNode(`${name} ×${w.toFixed(1)}`));
+  legend.appendChild(s);
+}
+
+// Scroll reveal.
+const io = new IntersectionObserver(entries => {
+  for (const e of entries) {
+    if (e.isIntersecting) { e.target.classList.add("visible"); io.unobserve(e.target); }
+  }
+}, { threshold: 0.12 });
+for (const el of document.querySelectorAll(".reveal")) io.observe(el);
+</script>
+</body>
+</html>

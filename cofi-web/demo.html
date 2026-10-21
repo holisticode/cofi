@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>CoFi — work becomes power</title>
+<style>
+  :root { color-scheme: dark; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:#0b0f1a; color:#e6edf7;
+    font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display:flex; flex-direction:column; align-items:center; min-height:100vh;
+    position:relative;
+  }
+  .back { position:absolute; top:16px; left:20px; color:#8b96ad; text-decoration:none; font-size:14px; }
+  .back:hover { color:#5eead4; }
+  #stage { width:min(1400px, 100vw); padding:16px; }
+  svg { width:100%; height:auto; display:block; }
+  #caption {
+    min-height:32px; text-align:center; font-size:17px; letter-spacing:.2px;
+    color:#c9d6ea; padding:6px 16px; transition:opacity .25s;
+  }
+  #controls { display:flex; justify-content:center; padding:8px 0 6px; }
+  #pause-btn {
+    background:#161c2e; color:#c9d6ea; border:1px solid #2c3757; border-radius:8px;
+    padding:8px 28px; font-size:15px; cursor:pointer; letter-spacing:.5px;
+  }
+  #pause-btn:hover { border-color:#47537a; }
+  #pause-btn.paused { border-color:#5eead4; color:#5eead4; }
+  @keyframes pulse { 0%,100% { opacity:.4; } 50% { opacity:.95; } }
+  .pulse { animation: pulse 2.2s ease-in-out infinite; }
+  @keyframes ringpulse { 0%,100% { opacity:.12; } 50% { opacity:.5; } }
+  .ring { animation: ringpulse 1.6s ease-in-out infinite; }
+</style>
+</head>
+<body>
+<a class="back" href="./index.html">← CoFi — what is this?</a>
+<div id="stage">
+  <svg id="svg" viewBox="0 0 1400 820" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div id="caption">One shared pool. Peer review converts work into voting power.</div>
+  <div id="controls">
+    <button id="pause-btn" title="space">pause</button>
+  </div>
+</div>
+<script>
+"use strict";
+const NS = "http://www.w3.org/2000/svg";
+const svg = document.getElementById("svg");
+const captionEl = document.getElementById("caption");
+const TAU = Math.PI * 2;
+
+function el(name, attrs, parent) {
+  const n = document.createElementNS(NS, name);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+// Frozen clock: when paused, clock.now() stops advancing, so every sleep and
+// tween freezes mid-flight and continues seamlessly on resume.
+const clock = {
+  paused: false,
+  frozen: 0,
+  pauseStart: 0,
+  now() {
+    const t = performance.now() - this.frozen;
+    return this.paused ? this.pauseStart - this.frozen : t;
+  },
+  setPaused(p) {
+    if (p === this.paused) return;
+    if (p) this.pauseStart = performance.now();
+    else this.frozen += performance.now() - this.pauseStart;
+    this.paused = p;
+  },
+};
+const ease = t => (t < .5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2);
+function sleep(ms) {
+  return new Promise(res => {
+    const t0 = clock.now();
+    (function step() {
+      clock.now() - t0 >= ms ? res() : requestAnimationFrame(step);
+    })();
+  });
+}
+function tween(dur, fn) {
+  return new Promise(res => {
+    const t0 = clock.now();
+    (function step() {
+      const p = Math.min(1, (clock.now() - t0) / dur);
+      fn(ease(p));
+      p < 1 ? requestAnimationFrame(step) : res();
+    })();
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Data
+// ---------------------------------------------------------------------------
+
+const ACTORS = [
+  { id:"designer",  name:"Designer",          role:"design",        weight:1.5, color:"#f77f00" },
+  { id:"developer", name:"Developer",         role:"code",          weight:1.3, color:"#4cc9f0" },
+  { id:"cm",        name:"Community manager", role:"community",     weight:1.0, color:"#f72585" },
+  { id:"architect", name:"Architect",         role:"design",        weight:1.5, color:"#9d4edd" },
+  { id:"support",   name:"Support",           role:"support",       weight:1.0, color:"#80ed99" },
+  { id:"investor",  name:"Investor",          role:"funding",       weight:1.0, color:"#ffd166", money:true },
+  { id:"infra",     name:"Infrastructure",    role:"block signing", weight:1.0, color:"#5eead4", infra:true },
+];
+const byId = Object.fromEntries(ACTORS.map(a => [a.id, a]));
+const REVIEWERS = ["architect", "designer"];
+const units = Object.fromEntries(ACTORS.map(a => [a.id, 0]));
+const flashes = Object.fromEntries(ACTORS.map(a => [a.id, 0]));
+const ROW_X = 300;
+const PIE = { cx:900, cy:430, r1:160, r0:80 };
+const GATE = { x:600, y:430 };
+const ROW_Y = Object.fromEntries(ACTORS.map((a, i) => [a.id, 210 + i * 66]));
+
+// ---------------------------------------------------------------------------
+// Static scene
+// ---------------------------------------------------------------------------
+
+el("rect", { x:0, y:0, width:1400, height:820, fill:"#0b0f1a" });
+
+// Title
+el("text", { x:48, y:64, fill:"#e6edf7", "font-size":44, "font-weight":800 }, svg)
+  .textContent = "CoFi";
+el("text", { x:48, y:92, fill:"#8b96ad", "font-size":18 }, svg)
+  .textContent = "work becomes power";
+
+// Section labels
+el("text", { x:60, y:140, fill:"#5b6b8c", "font-size":13, "letter-spacing":2 }, svg)
+  .textContent = "CONTRIBUTORS";
+el("text", { x:600, y:140, "text-anchor":"middle", fill:"#5b6b8c", "font-size":13, "letter-spacing":2 }, svg)
+  .textContent = "REVIEW";
+el("text", { x:900, y:140, "text-anchor":"middle", fill:"#5b6b8c", "font-size":13, "letter-spacing":2 }, svg)
+  .textContent = "THE POOL";
+el("text", { x:1270, y:140, "text-anchor":"middle", fill:"#5b6b8c", "font-size":13, "letter-spacing":2 }, svg)
+  .textContent = "CONSENSUS";
+
+// Dividers
+el("line", { x1:340, y1:120, x2:340, y2:700, stroke:"#1a2136" });
+el("line", { x1:1120, y1:120, x2:1120, y2:740, stroke:"#1a2136" });
+
+// Actor rows
+for (const a of ACTORS) {
+  const y = ROW_Y[a.id];
+  el("circle", { cx:64, cy:y-8, r:8, fill:a.color });
+  el("text", { x:84, y:y-4, fill:"#e6edf7", "font-size":16, "font-weight":700 }, svg)
+    .textContent = a.name;
+  const sub = `${a.role}  ·  weight x${a.weight.toFixed(1)}` + (a.money ? "  ·  capital" : "");
+  el("text", { x:84, y:y+16, fill:"#8b96ad", "font-size":12.5 }, svg).textContent = sub;
+  const u = el("text", { x:ROW_X-12, y:y, "text-anchor":"end", fill:a.color, "font-size":20, "font-weight":800 }, svg);
+  u.id = "u-" + a.id;
+  u.textContent = "0 u";
+}
+
+// Pool (donut)
+const slices = el("g", {}, svg);
+const labels = el("g", {}, svg);
+el("circle", { cx:PIE.cx, cy:PIE.cy, r:PIE.r1+6, fill:"none", stroke:"#1d2539", "stroke-width":2 });
+const payoffRing = el("circle", { cx:PIE.cx, cy:PIE.cy, r:PIE.r1+14, fill:"none",
+  stroke:"#e6edf7", "stroke-width":2, opacity:0 });
+el("text", { x:PIE.cx, y:PIE.cy-4, "text-anchor":"middle", fill:"#e6edf7", "font-size":30, "font-weight":800 }, svg)
+  .id = "pie-total";
+el("text", { x:PIE.cx, y:PIE.cy+26, "text-anchor":"middle", fill:"#8b96ad", "font-size":13 }, svg)
+  .textContent = "one shared pool";
+document.getElementById("pie-total").textContent = "0 units";
+
+// Review gate
+el("rect", { x:500, y:404, width:200, height:52, rx:8, fill:"#12192b", stroke:"#2c3757" });
+el("text", { x:600, y:486, "text-anchor":"middle", fill:"#5b6b8c", "font-size":12 }, svg)
+  .textContent = "commit-reveal review";
+const reviewerAvatars = {};
+const reviewerEnvelopes = {};
+for (const [i, rid] of REVIEWERS.entries()) {
+  const rx = 560 + i * 80, ry = 350;
+  const avatar = el("g", { opacity:0 }, svg);
+  el("circle", { cx:rx, cy:ry, r:16, fill:"#242c47", stroke:"#47537a", "stroke-width":2 }, avatar);
+  const t = el("text", { x:rx, y:ry+5, "text-anchor":"middle", fill:"#c9d6ea", "font-size":13, "font-weight":700 }, avatar);
+  t.textContent = rid === "architect" ? "A" : "D";
+  el("text", { x:rx, y:ry+30, "text-anchor":"middle", fill:"#8b96ad", "font-size":12 }, svg)
+    .textContent = rid;
+  reviewerAvatars[rid] = avatar;
+
+  const env = el("g", { opacity:0 }, svg);
+  el("rect", { x:rx-20, y:430-13, width:40, height:26, rx:3, fill:"#2a3350", stroke:"#47537a" });
+  const flap = el("polygon", { fill:"#36406b" }, env);
+  flap.setAttribute("points", `${rx-20},417 ${rx+20},417 ${rx},430`);
+  const sealed = el("text", { x:rx, y:430+3, "text-anchor":"middle", fill:"#5b6b8c", "font-size":8 }, env);
+  sealed.textContent = "sealed";
+  const check = el("polyline", { points:`${rx-8},430 ${rx-2},436 ${rx+9},424`,
+    fill:"none", stroke:"#80ed99", "stroke-width":3, "stroke-linecap":"round",
+    "stroke-linejoin":"round", opacity:0 }, env);
+  reviewerEnvelopes[rid] = { env, flap, sealed, check };
+}
+const approved = el("text", { x:680, y:435, "text-anchor":"middle", fill:"#80ed99",
+  "font-size":13, "font-weight":700, opacity:0 }, svg);
+approved.textContent = "approved";
+
+// Consensus panel
+el("rect", { x:1140, y:180, width:250, height:560, rx:10, fill:"none", stroke:"#1d2539" });
+for (const [i, vx] of [1190, 1270, 1350].entries()) {
+  const vg = el("g", {}, svg);
+  el("circle", { cx:vx, cy:250, r:13, fill:"#1b2338", stroke:"#5eead4", "stroke-width":2 }, vg);
+  vg.classList.add("pulse");
+  el("line", { x1:vx-5, y1:250, x2:vx+5, y2:250, stroke:"#5eead4", "stroke-width":2 }, vg);
+}
+el("text", { x:1270, y:292, "text-anchor":"middle", fill:"#c9d6ea", "font-size":14, "font-weight":700 }, svg)
+  .textContent = "validators";
+const blockCounter = el("text", { x:1270, y:322, "text-anchor":"middle", fill:"#5b6b8c", "font-size":12 }, svg);
+blockCounter.textContent = "block #0";
+const blockSlots = [];
+for (let r = 0; r < 5; r++) {
+  for (let c = 0; c < 4; c++) {
+    const bx = 1156 + c * 62, by = 350 + r * 62;
+    const g = el("g", {}, svg);
+    el("rect", { x:bx, y:by, width:46, height:46, rx:6, fill:"#141b2e", stroke:"#2c3757" });
+    const hl = el("rect", { x:bx, y:by, width:46, height:46, rx:6, fill:"none",
+      stroke:"#5eead4", "stroke-width":2, opacity:0 });
+    const t = el("text", { x:bx+23, y:by+29, "text-anchor":"middle", fill:"#5b6b8c", "font-size":13 }, g);
+    blockSlots.push({ g, hl, t });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Render loop (pie + counters)
+// ---------------------------------------------------------------------------
+
+function polar(cx, cy, r, ang) { return [cx + r * Math.cos(ang), cy + r * Math.sin(ang)]; }
+function arcPath(a0, a1) {
+  const large = (a1 - a0) > Math.PI ? 1 : 0;
+  const [x0, y0] = polar(PIE.cx, PIE.cy, PIE.r1, a0);
+  const [x1, y1] = polar(PIE.cx, PIE.cy, PIE.r1, a1);
+  const [x2, y2] = polar(PIE.cx, PIE.cy, PIE.r0, a1);
+  const [x3, y3] = polar(PIE.cx, PIE.cy, PIE.r0, a0);
+  return `M${x0},${y0} A${PIE.r1},${PIE.r1} 0 ${large} 1 ${x1},${y1} L${x2},${y2} A${PIE.r0},${PIE.r0} 0 ${large} 0 ${x3},${y3} Z`;
+}
+
+function render() {
+  const total = ACTORS.reduce((s, a) => s + units[a.id], 0);
+  const now = performance.now();
+  let a0 = -Math.PI / 2;
+  slices.innerHTML = "";
+  labels.innerHTML = "";
+  for (const a of ACTORS) {
+    const frac = total > 0 ? units[a.id] / total : 0;
+    if (frac <= 0.0001) continue;
+    const a1 = a0 + frac * TAU;
+    el("path", { d:arcPath(a0, a1), fill:a.color, stroke:"#0b0f1a", "stroke-width":2 }, slices);
+    if (now - flashes[a.id] < 450) {
+      el("path", { d:arcPath(a0, a1), fill:"#ffffff",
+        opacity:(1 - (now - flashes[a.id]) / 450) * 0.5 }, slices);
+    }
+    if (frac >= 0.04) {
+      const mid = (a0 + a1) / 2;
+      const [lx, ly] = polar(PIE.cx, PIE.cy, PIE.r1 + 34, mid);
+      const pct = (frac * 100).toFixed(frac < 0.1 ? 1 : 0);
+      el("text", { x:lx, y:ly+4, "text-anchor":"middle", fill:"#c9d6ea", "font-size":13,
+        "font-weight":700 }, labels)
+        .textContent = `${a.name.toLowerCase()} ${pct}%`;
+    }
+    a0 = a1;
+  }
+  document.getElementById("pie-total").textContent = `${Math.round(total)} units`;
+  for (const a of ACTORS) {
+    document.getElementById("u-" + a.id).textContent = `${Math.round(units[a.id])} u`;
+  }
+  requestAnimationFrame(render);
+}
+requestAnimationFrame(render);
+
+// ---------------------------------------------------------------------------
+// Animation helpers
+// ---------------------------------------------------------------------------
+
+async function setCaption(text) {
+  captionEl.style.opacity = 0;
+  await sleep(250);
+  captionEl.textContent = text;
+  captionEl.style.opacity = 1;
+}
+
+async function addUnits(id, amount, dur) {
+  const from = units[id];
+  await tween(dur, p => { units[id] = from + amount * p; });
+  units[id] = from + amount;
+  flashes[id] = performance.now();
+}
+
+function bez(p, a, c, b) {
+  const q = 1 - p;
+  return {
+    x: q*q*a.x + 2*q*p*c.x + p*p*b.x,
+    y: q*q*a.y + 2*q*p*c.y + p*p*b.y,
+  };
+}
+
+function makeToken(id) {
+  const a = byId[id];
+  const g = el("g", {}, svg);
+  el("circle", { r:13, fill:a.color }, g);
+  const t = el("text", { y:5, "text-anchor":"middle", fill:"#0b0f1a",
+    "font-size":13, "font-weight":800 }, g);
+  t.textContent = a.money ? "$" : a.name[0].toUpperCase();
+  const y = ROW_Y[id];
+  g.setAttribute("transform", `translate(${ROW_X - 16},${y})`);
+  return g;
+}
+
+async function fly(g, from, to, dur) {
+  const c = { x:(from.x + to.x) / 2 + 30, y:(from.y + to.y) / 2 - 90 };
+  await tween(dur, p => {
+    const pt = bez(p, from, c, to);
+    g.setAttribute("transform", `translate(${pt.x},${pt.y})`);
+  });
+}
+
+async function review(selfId) {
+  const reviewers = REVIEWERS.filter(r => r !== selfId);
+  for (const rid of reviewers) {
+    const { env, flap, sealed, check } = reviewerEnvelopes[rid];
+    reviewerAvatars[rid].setAttribute("opacity", 1);
+    reviewerAvatars[rid].classList.add("pulse");
+    env.setAttribute("opacity", 1);
+    const rx = rid === "architect" ? 560 : 640;
+    await sleep(500);
+    // commit phase: flap stays closed, "sealed" visible — a beat passes
+    await sleep(350);
+    // reveal phase: flap opens, check appears
+    await tween(400, p => {
+      const tipY = 430 + 13 - p * 53;
+      flap.setAttribute("points", `${rx-20},417 ${rx+20},417 ${rx},${tipY}`);
+    });
+    sealed.setAttribute("opacity", 0);
+    check.setAttribute("opacity", 1);
+    reviewerAvatars[rid].classList.remove("pulse");
+    await sleep(350);
+    env.setAttribute("opacity", 0);
+    flap.setAttribute("points", `${rx-20},417 ${rx+20},417 ${rx},430`);
+    sealed.setAttribute("opacity", 1);
+    check.setAttribute("opacity", 0);
+    reviewerAvatars[rid].setAttribute("opacity", 0);
+  }
+  approved.setAttribute("opacity", 1);
+  await sleep(500);
+  approved.setAttribute("opacity", 0);
+}
+
+async function contribution(id, amount) {
+  const a = byId[id];
+  const y = ROW_Y[id];
+  const token = makeToken(id);
+  await fly(token, { x:ROW_X - 16, y }, { x:GATE.x, y:GATE.y }, 900);
+  await review(id);
+  await fly(token, { x:GATE.x, y:GATE.y }, { x:PIE.cx - PIE.r1 - 22, y:PIE.cy }, 700);
+  token.remove();
+  await addUnits(id, amount * a.weight, 900);
+}
+
+// ---------------------------------------------------------------------------
+// Block production (infrastructure rewards)
+// ---------------------------------------------------------------------------
+
+let blockN = 0;
+let ticking = true;
+(async function blockLoop() {
+  await sleep(8000);
+  while (true) {
+    if (!ticking) { await sleep(200); continue; }
+    await sleep(1400);
+    if (!ticking) continue;
+    blockN++;
+    const slot = blockSlots[(blockN - 1) % blockSlots.length];
+    slot.t.textContent = blockN;
+    blockCounter.textContent = `block #${blockN}`;
+    slot.hl.setAttribute("opacity", 1);
+    tween(600, p => slot.hl.setAttribute("opacity", 1 - p));
+    const from = units.infra;
+    await tween(300, p => { if (ticking) units.infra = from + p; });
+    if (!ticking) continue;
+    units.infra = from + 1;
+    flashes.infra = performance.now();
+  }
+})();
+
+// ---------------------------------------------------------------------------
+// Scene
+// ---------------------------------------------------------------------------
+
+async function scene() {
+  setCaption("One shared pool. Peer review converts work into voting power.");
+  await sleep(3600);
+
+  setCaption("Developer contributes 10 units of code — weight x1.3. It enters the review gate.");
+  await contribution("developer", 10);
+  await sleep(1600);
+
+  setCaption("Community manager contributes 8 units of community.");
+  await contribution("cm", 8);
+  await sleep(1500);
+
+  setCaption("An investor adds 100 units of funding. Capital is just another asset type — same review, same pool, no special path.");
+  await contribution("investor", 100);
+  await sleep(2000);
+
+  setCaption("Support contributes 12 units.");
+  await contribution("support", 12);
+  await sleep(1300);
+
+  setCaption("Designer contributes 8 units of design. Reviewers cannot approve their own work — the architect reviews alone.");
+  await contribution("designer", 8);
+  await sleep(1800);
+
+  setCaption("Every signed block earns infrastructure units — the system pays for its own upkeep.");
+  await sleep(8000);
+
+  setCaption("Voting power = share of the pool. No coins staked — only work.");
+  payoffRing.classList.add("ring");
+  await sleep(9000);
+  payoffRing.classList.remove("ring");
+}
+
+async function reset() {
+  ticking = false;
+  await tween(900, p => { svg.style.opacity = 1 - 0.75 * p; });
+  for (const a of ACTORS) units[a.id] = 0;
+  for (const slot of blockSlots) { slot.t.textContent = ""; slot.hl.setAttribute("opacity", 0); }
+  blockCounter.textContent = "block #0";
+  blockN = 0;
+  svg.style.opacity = 1;
+  await sleep(600);
+  ticking = true;
+}
+
+const pauseBtn = document.getElementById("pause-btn");
+function togglePause() {
+  clock.setPaused(!clock.paused);
+  pauseBtn.textContent = clock.paused ? "continue" : "pause";
+  pauseBtn.classList.toggle("paused", clock.paused);
+}
+pauseBtn.addEventListener("click", togglePause);
+window.addEventListener("keydown", e => {
+  if (e.code === "Space") { e.preventDefault(); togglePause(); }
+});
+
+(async function loop() {
+  while (true) {
+    await scene();
+    await reset();
+  }
+})();
+</script>
+</body>
+</html>

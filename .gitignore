@@ -1,0 +1,7 @@
+/target
+/cofi-data
+/cofi-node/devnet/cometbft-data
+/cofi-node/devnet/cofi-data
+/cofi-node/devnet/*.key
+/cofi-node/devnet/*.log
+/cofi-node/devnet/vote-*.json

@@ -1,0 +1,16 @@
+[package]
+name = "cofi-client"
+version = "0.1.0"
+edition = "2024"
+description = "CoFi CLI client — construct txs, sign, and query a CoFi devnet via CometBFT RPC"
+
+[dependencies]
+cofi-node = { path = "../cofi-node" }
+cofi-contracts = { path = "../cofi-contracts" }
+clap = { version = "4", features = ["derive"] }
+tendermint-rpc = { version = "0.34", features = ["http-client"] }
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+rand = "0.8"
+hex = "0.4"
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }

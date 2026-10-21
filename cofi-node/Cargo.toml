@@ -1,0 +1,28 @@
+[package]
+name = "cofi-node"
+version = "0.1.0"
+edition = "2024"
+description = "CoFi blockchain node — ABCI application driven by CometBFT"
+
+[[bin]]
+name = "cofi-node"
+path = "src/main.rs"
+
+[dependencies]
+cofi-contracts = { path = "../cofi-contracts" }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tendermint = "0.34"
+tendermint-abci = "0.34"
+tendermint-proto = "0.34"
+sha2 = "0.10"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+clap = { version = "4", features = ["derive"] }
+ed25519-dalek = "2"
+hex = "0.4"
+thiserror = "2"
+
+[dev-dependencies]
+rand = "0.8"
