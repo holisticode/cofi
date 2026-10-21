@@ -3,6 +3,7 @@ name = "cofi-client"
 version = "0.1.0"
 edition = "2024"
 description = "CoFi CLI client — construct txs, sign, and query a CoFi devnet via CometBFT RPC"
+license = "MIT"
 
 [dependencies]
 cofi-node = { path = "../cofi-node" }

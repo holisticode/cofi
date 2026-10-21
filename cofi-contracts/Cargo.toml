@@ -3,6 +3,7 @@ name = "cofi-contracts"
 version = "0.1.0"
 edition = "2024"
 description = "CoFi contribution-weighted state machine — asset layer and contribution layer"
+license = "MIT"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

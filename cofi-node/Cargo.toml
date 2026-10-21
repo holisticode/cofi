@@ -3,6 +3,7 @@ name = "cofi-node"
 version = "0.1.0"
 edition = "2024"
 description = "CoFi blockchain node — ABCI application driven by CometBFT"
+license = "MIT"
 
 [[bin]]
 name = "cofi-node"

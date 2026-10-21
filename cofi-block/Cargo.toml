@@ -3,6 +3,7 @@ name = "cofi-block"
 version = "0.1.0"
 edition = "2024"
 description = "CoFi block data structures — header, body, hash chain primitives"
+license = "MIT"
 
 [dependencies]
 cofi-contracts = { path = "../cofi-contracts" }
