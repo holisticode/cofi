@@ -84,7 +84,9 @@ cargo test
 
 ## Website
 
-A landing page explaining CoFi, plus a live demo animation of the protocol loop, live in [`cofi-web/`](cofi-web/). Open `cofi-web/index.html` in a browser — static hosting to be decided.
+A landing page explaining CoFi, plus a live demo animation of the protocol loop, live in [`cofi-web/`](cofi-web/).
+
+Live at **https://holisticode.github.io/cofi/** (GitHub Pages). Local fallback: open `cofi-web/index.html` in a browser.
 
 ## Further reading
 
